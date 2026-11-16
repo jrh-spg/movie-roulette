@@ -1,0 +1,9 @@
+services:
+  movie-roulette:
+    build: .
+    container_name: movie-roulette
+    restart: unless-stopped
+    ports:
+      - "8154:5000"
+    env_file:
+      - .env

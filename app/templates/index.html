@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h1>🎬 Movie Roulette</h1>
+  <p class="subtitle">Pick a random movie from your Jellyfin server.</p>
+
+  <div class="controls">
+    <button id="spin-btn">🎲 Spin</button>
+  </div>
+
+  <div id="result" class="result hidden">
+    <img id="poster" src="" alt="" class="poster hidden">
+    <div class="details">
+      <h2 id="title"></h2>
+      <p id="meta"></p>
+      <p id="overview"></p>
+      <a id="play-link" href="#" target="_blank" rel="noopener" class="play-button hidden">▶ Play in Jellyfin</a>
+    </div>
+  </div>
+
+  <p id="fetch-error" class="error hidden"></p>
+</div>
+
+<script>
+  const spinBtn = document.getElementById('spin-btn');
+  const resultEl = document.getElementById('result');
+  const errorEl = document.getElementById('fetch-error');
+  const posterEl = document.getElementById('poster');
+  const titleEl = document.getElementById('title');
+  const metaEl = document.getElementById('meta');
+  const overviewEl = document.getElementById('overview');
+  const playLinkEl = document.getElementById('play-link');
+
+  async function spin() {
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'Spinning...';
+    errorEl.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/random');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong.');
+      }
+
+      titleEl.textContent = data.year ? `${data.name} (${data.year})` : data.name;
+
+      const metaParts = [];
+      if (data.official_rating) metaParts.push(data.official_rating);
+      if (data.runtime_minutes) metaParts.push(`${data.runtime_minutes} min`);
+      if (data.rating) metaParts.push(`★ ${data.rating.toFixed(1)}`);
+      if (data.genres && data.genres.length) metaParts.push(data.genres.join(', '));
+      metaEl.textContent = metaParts.join(' · ');
+
+      overviewEl.textContent = data.overview || '';
+
+      if (data.play_url) {
+        playLinkEl.href = data.play_url;
+        playLinkEl.classList.remove('hidden');
+      } else {
+        playLinkEl.classList.add('hidden');
+      }
+
+      if (data.has_image) {
+        posterEl.src = `/poster/${data.id}`;
+        posterEl.classList.remove('hidden');
+      } else {
+        posterEl.classList.add('hidden');
+      }
+
+      resultEl.classList.remove('hidden');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.classList.remove('hidden');
+      resultEl.classList.add('hidden');
+    } finally {
+      spinBtn.disabled = false;
+      spinBtn.textContent = '🎲 Spin';
+    }
+  }
+
+  spinBtn.addEventListener('click', spin);
+</script>
+{% endblock %}
