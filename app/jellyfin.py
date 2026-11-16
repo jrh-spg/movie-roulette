@@ -2,6 +2,9 @@
 
 import requests
 
+# Extra metadata fields to request alongside each movie item.
+MOVIE_FIELDS = "Overview,Genres,ProductionYear,CommunityRating,OfficialRating,RunTimeTicks"
+
 
 class JellyfinError(Exception):
     """Raised when a request to Jellyfin fails or returns an unexpected response."""
@@ -51,8 +54,14 @@ class JellyfinClient:
             "Recursive": "true",
             "SortBy": "Random",
             "Limit": 1,
-            "Fields": "Overview,Genres,ProductionYear,CommunityRating,OfficialRating,RunTimeTicks",
+            "Fields": MOVIE_FIELDS,
         }
+        items = self._get(self._items_path(), params=params).json().get("Items", [])
+        return items[0] if items else None
+
+    def get_movie_by_id(self, item_id):
+        """Look up a single movie by id (used for shareable per-movie links)."""
+        params = {"Ids": item_id, "Fields": MOVIE_FIELDS}
         items = self._get(self._items_path(), params=params).json().get("Items", [])
         return items[0] if items else None
 

@@ -3,12 +3,19 @@
 import os
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .jellyfin import JellyfinClient
 
 
 def create_app():
     app = Flask(__name__)
+
+    # Trust X-Forwarded-Proto/Host from a reverse proxy (e.g. one terminating
+    # HTTPS in front of this app) so generated absolute URLs - used in Open
+    # Graph tags for Discord/Facebook link previews - have the right scheme
+    # and host instead of always reporting http://<internal-host>.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_for=1)
 
     app.config["JELLYFIN_URL"] = os.environ.get("JELLYFIN_URL", "").rstrip("/")
     app.config["JELLYFIN_API_KEY"] = os.environ.get("JELLYFIN_API_KEY", "")

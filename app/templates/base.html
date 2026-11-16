@@ -4,6 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Movie Roulette{% endblock %}</title>
+
+  {% block meta %}
+  <meta name="description" content="Pick a random movie from your Jellyfin server.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Movie Roulette">
+  <meta property="og:title" content="🎬 Movie Roulette">
+  <meta property="og:description" content="Pick a random movie from your Jellyfin server.">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  {% endblock %}
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>

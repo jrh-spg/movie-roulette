@@ -30,6 +30,11 @@ h1 {
   margin-bottom: 0.25rem;
 }
 
+.year {
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .subtitle {
   color: var(--muted);
   margin-top: 0;
@@ -100,6 +105,49 @@ button:disabled {
 
 .play-button:hover {
   opacity: 0.9;
+}
+
+.share-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.share-button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.facebook-button {
+  background: #1877f2;
+  color: #fff;
+}
+
+.facebook-button:hover {
+  opacity: 0.9;
+}
+
+.copy-button {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid #333;
+}
+
+.copy-button:hover {
+  border-color: var(--accent);
+}
+
+.copy-feedback {
+  color: var(--accent);
+  font-size: 0.9rem;
 }
 
 .error {

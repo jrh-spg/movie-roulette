@@ -1,6 +1,6 @@
 """HTTP routes for Movie Roulette."""
 
-from flask import Blueprint, Response, abort, current_app, jsonify, render_template
+from flask import Blueprint, Response, abort, current_app, jsonify, render_template, url_for
 
 from .jellyfin import JellyfinError
 
@@ -11,6 +11,7 @@ def _format_movie(item):
     runtime_ticks = item.get("RunTimeTicks")
     # Jellyfin reports runtime in 100-nanosecond ticks.
     runtime_minutes = int(runtime_ticks / 600_000_000) if runtime_ticks else None
+    has_image = "Primary" in (item.get("ImageTags") or {})
 
     try:
         play_url = current_app.jellyfin.get_item_web_url(item.get("Id"))
@@ -26,8 +27,11 @@ def _format_movie(item):
         "rating": item.get("CommunityRating"),
         "official_rating": item.get("OfficialRating"),
         "runtime_minutes": runtime_minutes,
-        "has_image": "Primary" in (item.get("ImageTags") or {}),
+        "has_image": has_image,
         "play_url": play_url,
+        # Stable, shareable link to this movie (used for Discord/Facebook
+        # previews) with Open Graph tags describing the movie itself.
+        "share_url": url_for("main.movie_share", item_id=item.get("Id"), _external=True),
     }
 
 
@@ -47,6 +51,23 @@ def api_random():
     return jsonify(_format_movie(item))
 
 
+@bp.route("/movie/<item_id>")
+def movie_share(item_id):
+    """Shareable, server-rendered page for a single movie with Open Graph tags
+    so pasting this link into Discord/Facebook shows a rich preview card."""
+    try:
+        item = current_app.jellyfin.get_movie_by_id(item_id)
+    except JellyfinError as exc:
+        current_app.logger.error(str(exc))
+        abort(502)
+    if not item:
+        abort(404)
+
+    movie = _format_movie(item)
+    poster_url = url_for("main.poster", item_id=item_id, _external=True) if movie["has_image"] else None
+    return render_template("share.html", movie=movie, poster_url=poster_url)
+
+
 @bp.route("/poster/<item_id>")
 def poster(item_id):
     try:
@@ -59,3 +80,4 @@ def poster(item_id):
 @bp.route("/healthz")
 def healthz():
     return jsonify({"status": "ok"})
+

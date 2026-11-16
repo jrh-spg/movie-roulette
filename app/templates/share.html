@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.name }}{% if movie.year %} ({{ movie.year }}){% endif %} · Movie Roulette{% endblock %}
+
+{% block meta %}
+<meta name="description" content="{{ movie.overview or (movie.name ~ ' - picked by Movie Roulette.') }}">
+<meta property="og:type" content="video.movie">
+<meta property="og:site_name" content="Movie Roulette">
+<meta property="og:title" content="{{ movie.name }}{% if movie.year %} ({{ movie.year }}){% endif %}">
+<meta property="og:description" content="{{ movie.overview or (movie.name ~ ' - picked by Movie Roulette.') }}">
+<meta property="og:url" content="{{ movie.share_url }}">
+{% if poster_url %}
+<meta property="og:image" content="{{ poster_url }}">
+<meta name="twitter:card" content="summary_large_image">
+{% else %}
+<meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+<meta name="twitter:card" content="summary">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>🎬 {{ movie.name }}{% if movie.year %} <span class="year">({{ movie.year }})</span>{% endif %}</h1>
+
+  <div class="result">
+    {% if poster_url %}
+    <img src="{{ poster_url }}" alt="{{ movie.name }} poster" class="poster">
+    {% endif %}
+    <div class="details">
+      <p class="meta">
+        {%- set parts = [] -%}
+        {%- if movie.official_rating -%}{{ parts.append(movie.official_rating) or "" }}{%- endif -%}
+        {%- if movie.runtime_minutes -%}{{ parts.append(movie.runtime_minutes ~ " min") or "" }}{%- endif -%}
+        {%- if movie.rating -%}{{ parts.append("★ " ~ "%.1f"|format(movie.rating)) or "" }}{%- endif -%}
+        {%- if movie.genres -%}{{ parts.append(movie.genres|join(', ')) or "" }}{%- endif -%}
+        {{ parts|join(' · ') }}
+      </p>
+      <p>{{ movie.overview }}</p>
+      {% if movie.play_url %}
+      <a href="{{ movie.play_url }}" target="_blank" rel="noopener" class="play-button">▶ Play in Jellyfin</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="subtitle"><a href="{{ url_for('main.index') }}">🎲 Spin for another random movie</a></p>
+</div>
+{% endblock %}

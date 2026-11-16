@@ -15,6 +15,11 @@
       <p id="meta"></p>
       <p id="overview"></p>
       <a id="play-link" href="#" target="_blank" rel="noopener" class="play-button hidden">▶ Play in Jellyfin</a>
+      <div id="share-row" class="share-row hidden">
+        <a id="facebook-share-link" href="#" target="_blank" rel="noopener" class="share-button facebook-button">Share on Facebook</a>
+        <button id="copy-link-btn" type="button" class="share-button copy-button">📋 Copy Share Link</button>
+        <span id="copy-feedback" class="copy-feedback hidden">Copied! Paste it in Discord, etc.</span>
+      </div>
     </div>
   </div>
 
@@ -30,6 +35,10 @@
   const metaEl = document.getElementById('meta');
   const overviewEl = document.getElementById('overview');
   const playLinkEl = document.getElementById('play-link');
+  const shareRowEl = document.getElementById('share-row');
+  const facebookShareLinkEl = document.getElementById('facebook-share-link');
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+  const copyFeedbackEl = document.getElementById('copy-feedback');
 
   async function spin() {
     spinBtn.disabled = true;
@@ -61,6 +70,15 @@
         playLinkEl.classList.add('hidden');
       }
 
+      if (data.share_url) {
+        facebookShareLinkEl.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.share_url)}`;
+        copyLinkBtn.dataset.shareUrl = data.share_url;
+        copyFeedbackEl.classList.add('hidden');
+        shareRowEl.classList.remove('hidden');
+      } else {
+        shareRowEl.classList.add('hidden');
+      }
+
       if (data.has_image) {
         posterEl.src = `/poster/${data.id}`;
         posterEl.classList.remove('hidden');
@@ -80,5 +98,18 @@
   }
 
   spinBtn.addEventListener('click', spin);
+
+  copyLinkBtn.addEventListener('click', async () => {
+    const shareUrl = copyLinkBtn.dataset.shareUrl;
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch (err) {
+      // Clipboard API unavailable (e.g. insecure context) - fall back to a prompt.
+      window.prompt('Copy this link:', shareUrl);
+    }
+    copyFeedbackEl.classList.remove('hidden');
+    setTimeout(() => copyFeedbackEl.classList.add('hidden'), 3000);
+  });
 </script>
 {% endblock %}
