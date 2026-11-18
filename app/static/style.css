@@ -92,62 +92,95 @@ button:disabled {
   color: var(--muted);
 }
 
-.play-button {
-  display: inline-block;
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 0.75rem;
+}
+
+.play-button,
+.imdb-button {
+  display: inline-block;
   padding: 0.5rem 1rem;
   border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.play-button {
   background: var(--accent);
   color: #111;
-  font-weight: 600;
-  text-decoration: none;
 }
 
-.play-button:hover {
+.play-button:hover,
+.imdb-button:hover {
   opacity: 0.9;
 }
 
-.share-row {
+.imdb-button {
+  background: #f5c518;
+  color: #111;
+}
+
+.similar {
+  margin-top: 1.5rem;
+}
+
+.similar h3 {
+  margin: 0 0 0.75rem;
+}
+
+.similar-list {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.6rem;
+  justify-content: center;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
 }
 
-.share-button {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-}
-
-.facebook-button {
-  background: #1877f2;
-  color: #fff;
-}
-
-.facebook-button:hover {
-  opacity: 0.9;
-}
-
-.copy-button {
-  background: var(--card);
+.similar-card {
+  position: relative;
+  flex: 0 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   color: var(--text);
-  border: 1px solid #333;
+  text-decoration: none;
 }
 
-.copy-button:hover {
-  border-color: var(--accent);
+.similar-card img:not(.library-badge) {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--card);
 }
 
-.copy-feedback {
-  color: var(--accent);
-  font-size: 0.9rem;
+.similar-card.no-poster {
+  justify-content: flex-end;
+  height: 180px;
+}
+
+.library-badge {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(18, 18, 18, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.similar-card span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.similar-card:hover span {
+  color: var(--text);
 }
 
 .error {

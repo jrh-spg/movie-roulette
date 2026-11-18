@@ -5,6 +5,9 @@
   <p class="subtitle">Pick a random movie from your Jellyfin server.</p>
 
   <div class="controls">
+    <select id="genre-select">
+      <option value="">All Genres</option>
+    </select>
     <button id="spin-btn">🎲 Spin</button>
   </div>
 
@@ -14,13 +17,18 @@
       <h2 id="title"></h2>
       <p id="meta"></p>
       <p id="overview"></p>
-      <a id="play-link" href="#" target="_blank" rel="noopener" class="play-button hidden">▶ Play in Jellyfin</a>
-      <div id="share-row" class="share-row hidden">
-        <a id="facebook-share-link" href="#" target="_blank" rel="noopener" class="share-button facebook-button">Share on Facebook</a>
-        <button id="copy-link-btn" type="button" class="share-button copy-button">📋 Copy Share Link</button>
-        <span id="copy-feedback" class="copy-feedback hidden">Copied! Paste it in Discord, etc.</span>
+      <p id="director" class="director hidden"></p>
+      <p id="cast" class="cast hidden"></p>
+      <div class="links">
+        <a id="play-link" href="#" target="_blank" rel="noopener" class="play-button hidden">▶ Play in Jellyfin</a>
+        <a id="imdb-link" href="#" target="_blank" rel="noopener" class="imdb-button hidden">IMDb</a>
       </div>
     </div>
+  </div>
+
+  <div id="similar" class="similar hidden">
+    <h3>You might also like</h3>
+    <div id="similar-list" class="similar-list"></div>
   </div>
 
   <p id="fetch-error" class="error hidden"></p>
@@ -28,25 +36,95 @@
 
 <script>
   const spinBtn = document.getElementById('spin-btn');
+  const genreSelect = document.getElementById('genre-select');
   const resultEl = document.getElementById('result');
   const errorEl = document.getElementById('fetch-error');
   const posterEl = document.getElementById('poster');
   const titleEl = document.getElementById('title');
   const metaEl = document.getElementById('meta');
   const overviewEl = document.getElementById('overview');
+  const castEl = document.getElementById('cast');
+  const directorEl = document.getElementById('director');
   const playLinkEl = document.getElementById('play-link');
-  const shareRowEl = document.getElementById('share-row');
-  const facebookShareLinkEl = document.getElementById('facebook-share-link');
-  const copyLinkBtn = document.getElementById('copy-link-btn');
-  const copyFeedbackEl = document.getElementById('copy-feedback');
+  const imdbLinkEl = document.getElementById('imdb-link');
+  const similarEl = document.getElementById('similar');
+  const similarListEl = document.getElementById('similar-list');
+
+  async function loadGenres() {
+    try {
+      const res = await fetch('/api/genres');
+      const genres = await res.json();
+      if (!res.ok || !Array.isArray(genres)) return;
+
+      for (const genre of genres) {
+        const option = document.createElement('option');
+        option.value = genre;
+        option.textContent = genre;
+        genreSelect.appendChild(option);
+      }
+    } catch (err) {
+      // Genre filtering is a nice-to-have; silently fall back to "All Genres".
+    }
+  }
+
+  async function loadSimilarMovies(movie) {
+    try {
+      const params = new URLSearchParams();
+      if (movie.imdb_id) params.set('imdb_id', movie.imdb_id);
+      params.set('title', movie.name);
+      if (movie.year) params.set('year', movie.year);
+      const res = await fetch(`/api/similar?${params.toString()}`);
+      const results = await res.json();
+      if (!res.ok || !Array.isArray(results) || !results.length) return;
+
+      for (const result of results) {
+        const card = document.createElement('a');
+        card.className = 'similar-card';
+        card.href = result.jellyfin_url || result.tmdb_url;
+        card.target = '_blank';
+        card.rel = 'noopener';
+
+        if (result.poster_url) {
+          const img = document.createElement('img');
+          img.src = result.poster_url;
+          img.alt = result.title;
+          card.appendChild(img);
+        } else {
+          card.classList.add('no-poster');
+        }
+
+        if (result.jellyfin_url) {
+          const badge = document.createElement('img');
+          badge.className = 'library-badge';
+          badge.src = '/static/jellyfin-icon.svg';
+          badge.alt = 'In your Jellyfin library';
+          badge.title = 'In your Jellyfin library';
+          card.appendChild(badge);
+        }
+
+        const caption = document.createElement('span');
+        caption.textContent = result.year ? `${result.title} (${result.year})` : result.title;
+        card.appendChild(caption);
+
+        similarListEl.appendChild(card);
+      }
+      similarEl.classList.remove('hidden');
+    } catch (err) {
+      // "Similar movies" suggestions are a nice-to-have; silently skip on failure.
+    }
+  }
 
   async function spin() {
     spinBtn.disabled = true;
     spinBtn.textContent = 'Spinning...';
     errorEl.classList.add('hidden');
+    similarEl.classList.add('hidden');
+    similarListEl.innerHTML = '';
 
     try {
-      const res = await fetch('/api/random');
+      const params = new URLSearchParams();
+      if (genreSelect.value) params.set('genre', genreSelect.value);
+      const res = await fetch(`/api/random?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Something went wrong.');
@@ -63,6 +141,21 @@
 
       overviewEl.textContent = data.overview || '';
 
+      if (data.directors && data.directors.length) {
+        const label = data.directors.length > 1 ? 'Directors' : 'Director';
+        directorEl.textContent = `${label}: ${data.directors.join(', ')}`;
+        directorEl.classList.remove('hidden');
+      } else {
+        directorEl.classList.add('hidden');
+      }
+
+      if (data.cast && data.cast.length) {
+        castEl.textContent = `Starring: ${data.cast.join(', ')}`;
+        castEl.classList.remove('hidden');
+      } else {
+        castEl.classList.add('hidden');
+      }
+
       if (data.play_url) {
         playLinkEl.href = data.play_url;
         playLinkEl.classList.remove('hidden');
@@ -70,13 +163,11 @@
         playLinkEl.classList.add('hidden');
       }
 
-      if (data.share_url) {
-        facebookShareLinkEl.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.share_url)}`;
-        copyLinkBtn.dataset.shareUrl = data.share_url;
-        copyFeedbackEl.classList.add('hidden');
-        shareRowEl.classList.remove('hidden');
+      if (data.imdb_url) {
+        imdbLinkEl.href = data.imdb_url;
+        imdbLinkEl.classList.remove('hidden');
       } else {
-        shareRowEl.classList.add('hidden');
+        imdbLinkEl.classList.add('hidden');
       }
 
       if (data.has_image) {
@@ -87,6 +178,7 @@
       }
 
       resultEl.classList.remove('hidden');
+      loadSimilarMovies(data);
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');
@@ -98,18 +190,6 @@
   }
 
   spinBtn.addEventListener('click', spin);
-
-  copyLinkBtn.addEventListener('click', async () => {
-    const shareUrl = copyLinkBtn.dataset.shareUrl;
-    if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-    } catch (err) {
-      // Clipboard API unavailable (e.g. insecure context) - fall back to a prompt.
-      window.prompt('Copy this link:', shareUrl);
-    }
-    copyFeedbackEl.classList.remove('hidden');
-    setTimeout(() => copyFeedbackEl.classList.add('hidden'), 3000);
-  });
+  loadGenres();
 </script>
 {% endblock %}

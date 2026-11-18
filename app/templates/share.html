@@ -36,9 +36,20 @@
         {{ parts|join(' · ') }}
       </p>
       <p>{{ movie.overview }}</p>
-      {% if movie.play_url %}
-      <a href="{{ movie.play_url }}" target="_blank" rel="noopener" class="play-button">▶ Play in Jellyfin</a>
+      {% if movie.directors %}
+      <p class="director">{{ "Directors" if movie.directors|length > 1 else "Director" }}: {{ movie.directors|join(', ') }}</p>
       {% endif %}
+      {% if movie.cast %}
+      <p class="cast">Starring: {{ movie.cast|join(', ') }}</p>
+      {% endif %}
+      <div class="links">
+        {% if movie.play_url %}
+        <a href="{{ movie.play_url }}" target="_blank" rel="noopener" class="play-button">▶ Play in Jellyfin</a>
+        {% endif %}
+        {% if movie.imdb_url %}
+        <a href="{{ movie.imdb_url }}" target="_blank" rel="noopener" class="imdb-button">IMDb</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 
